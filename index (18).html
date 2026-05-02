@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Signal & Frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,700;1,800&family=Barlow:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0A09;--fg:#F0EDE6;--mid:#7A7770;--dim:#2E2D2A;--border:rgba(240,237,230,0.08);--disp:'Barlow Condensed',Impact,sans-serif;--body:'Barlow',Helvetica,sans-serif}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);overflow-x:hidden;cursor:default}
+::selection{background:var(--fg);color:var(--bg)}
+::-webkit-scrollbar{width:2px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--dim)}
+a{text-decoration:none;color:inherit}
+.top-nav{position:relative;z-index:20;display:flex;align-items:center;gap:6px;padding:20px 28px;flex-wrap:wrap}
+.pill{font-family:var(--body);font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--mid);border:1px solid var(--dim);border-radius:100px;padding:9px 18px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;white-space:nowrap}
+.pill:hover,.pill.active{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+#snav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,9,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:14px 28px;transform:translateY(-100%);transition:transform .35s cubic-bezier(.25,.46,.45,.94)}
+#snav.show{transform:translateY(0)}
+.snav-brand{font-family:var(--disp);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-right:10px;white-space:nowrap}
+#home{position:relative;width:100%;min-height:100vh;background:var(--bg);overflow:hidden}
+.home-welcome{position:relative;z-index:5;padding:6px 28px 0;font-family:var(--body);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);line-height:1.5}
+.home-name-wrap{position:relative;z-index:5;padding:0 16px;overflow:hidden}
+.home-name{font-family:var(--disp);font-size:clamp(96px,16vw,230px);font-weight:900;text-transform:uppercase;letter-spacing:-.01em;color:var(--fg);display:block;white-space:nowrap;line-height:.85}
+.collage{position:relative;width:100%;height:660px;z-index:2;overflow:hidden;margin-top:-10px}
+.ci{position:absolute;overflow:hidden;border:1px solid rgba(240,237,230,.06)}
+.ci img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
+.ci:hover img{transform:scale(1.04)}
+.ci-cap{position:absolute;bottom:0;left:0;right:0;padding:9px 12px;background:linear-gradient(to top,rgba(10,10,9,.85),transparent);font-family:var(--body);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(240,237,230,.55);opacity:0;transition:opacity .25s}
+.ci:hover .ci-cap{opacity:1}
+.vs{position:absolute;overflow:hidden;border:1px dashed rgba(240,237,230,.14)}
+.vs video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.vs video.on{display:block}
+.vs-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#111110}
+.vs-ph span{font-family:var(--body);font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid)}
+.vs-ph label{font-family:var(--body);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--fg);border:1px solid var(--dim);border-radius:100px;padding:8px 16px;cursor:pointer;transition:background .2s,color .2s}
+.vs-ph label:hover{background:var(--fg);color:var(--bg)}
+input[type=file]{display:none}
+.home-scroll{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;padding:26px 0 40px;gap:8px;cursor:pointer}
+.hsl{width:1px;height:48px;background:linear-gradient(to bottom,var(--mid),transparent);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4;transform:scaleY(1);transform-origin:top}50%{opacity:1;transform:scaleY(.5);transform-origin:top}}
+.home-scroll span{font-family:var(--body);font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--mid)}
+.sec{padding:96px 60px;border-top:1px solid var(--border)}
+.eyebrow{font-family:var(--body);font-size:9px;font-weight:500;letter-spacing:.30em;text-transform:uppercase;color:var(--mid);margin-bottom:52px}
+.bio-sec{padding:96px 60px;border-top:1px solid var(--border);display:grid;grid-template-columns:240px 1fr 300px;gap:56px;align-items:center}
+.bio-title{font-family:var(--disp);font-size:clamp(42px,4.2vw,66px);font-weight:900;text-transform:lowercase;line-height:.9}
+.bio-lead{font-family:var(--body);font-size:15px;font-style:italic;font-weight:300;line-height:1.7;color:var(--fg);margin-bottom:16px;text-align:center}
+.bio-main{font-family:var(--body);font-size:13px;font-weight:300;line-height:1.85;color:var(--mid);text-align:center}
+.bio-main strong{color:var(--fg);font-weight:400}
+.bio-portrait{width:100%;aspect-ratio:3/4;overflow:hidden;border:1px solid var(--border)}
+.disp-title{font-family:var(--disp);font-weight:900;text-transform:uppercase;line-height:.88;letter-spacing:-.01em}
+.disp-title em{font-style:italic;color:var(--mid)}
+.strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:0}
+.s-card{background:#0f0f0e;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:border-color .25s;position:relative}
+.s-card:hover{border-color:rgba(240,237,230,.22)}
+.s-card-arrow{position:absolute;top:22px;right:22px;font-size:18px;color:var(--mid);transition:color .2s,transform .2s}
+.s-card:hover .s-card-arrow{color:var(--fg);transform:translate(2px,-2px)}
+.s-card-photo{width:100%;overflow:hidden;flex-shrink:0}
+.s-card-photo img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;transition:transform .5s ease}
+.s-card:hover .s-card-photo img{transform:scale(1.04)}
+.s-card-body{padding:32px 36px 36px;display:flex;flex-direction:column;flex:1}
+.s-card-num{font-family:var(--body);font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--mid);margin-bottom:12px}
+.s-card-title{font-family:var(--disp);font-size:40px;font-weight:800;text-transform:uppercase;line-height:.9;margin-bottom:8px;letter-spacing:-.01em}
+.s-card-tags{font-family:var(--body);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mid);margin-bottom:20px}
+.s-card-desc{font-family:var(--body);font-size:13px;font-weight:300;line-height:1.8;color:var(--mid)}
+.s-card-desc strong{color:var(--fg);font-weight:400}
+.s-card-metrics{display:flex;gap:28px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.mv{font-family:var(--disp);font-size:28px;font-weight:700;display:block;line-height:1}
+.ml{font-family:var(--body);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--mid);display:block;margin-top:3px}
+.rscore-wrap{margin-top:20px}
+.rscore-lbl{font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:10px}
+.rscore-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.rscore-name{flex:1.3;font-family:var(--body);font-size:12px;font-weight:300;color:var(--mid)}
+.rscore-name.top{color:var(--fg)}
+.rscore-bar-wrap{flex:1.5;height:2px;background:var(--dim)}
+.rscore-bar{height:100%;background:var(--dim)}
+.rscore-bar.top{background:var(--fg)}
+.rscore-val{font-family:var(--disp);font-size:18px;font-weight:700;min-width:34px;text-align:right}
+.attn-sec{padding:96px 60px;border-top:1px solid var(--border)}
+.attn-video-large{position:relative;width:100%;height:500px;background:#111110;border:1px dashed var(--dim);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;margin-bottom:56px}
+.attn-video-large video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.attn-video-large video.on{display:block}
+.attn-vid-lbl{position:relative;z-index:2;font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid)}
+.attn-vid-addlbl{position:relative;z-index:2;font-family:var(--body);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--fg);border:1px solid var(--dim);border-radius:100px;padding:9px 20px;cursor:pointer;transition:background .2s,color .2s}
+.attn-vid-addlbl:hover{background:var(--fg);color:var(--bg)}
+.attn-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:36px}
+.attn-stat{background:var(--bg);padding:22px 18px}
+.attn-stat-val{font-family:var(--disp);font-size:30px;font-weight:700;line-height:1}
+.attn-stat-lbl{font-family:var(--body);font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--mid);margin-top:6px;line-height:1.4}
+.attn-quote{font-family:var(--body);font-size:17px;font-style:italic;font-weight:300;line-height:1.65;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:36px;color:var(--fg);max-width:760px}
+.attn-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.attn-cell{background:#0f0f0e;border:1px solid var(--border);padding:22px}
+.attn-cell-num{font-family:var(--body);font-size:9px;letter-spacing:.2em;color:var(--mid);margin-bottom:9px}
+.attn-cell-title{font-family:var(--disp);font-size:17px;font-weight:700;text-transform:uppercase;margin-bottom:5px}
+.attn-cell-body{font-family:var(--body);font-size:12px;font-weight:300;line-height:1.65;color:var(--mid)}
+.film-sec{padding:96px 60px 0;border-top:1px solid var(--border)}
+.iss-eyebrow{font-family:var(--body);font-size:9px;font-weight:500;letter-spacing:.30em;text-transform:uppercase;color:var(--mid);margin-bottom:52px}
+.prod-layout{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+.prod-stills{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.prod-still{overflow:hidden;border:1px solid var(--border)}
+.prod-still img{width:100%;object-fit:cover;display:block}
+.prod-still.wide{grid-column:1/-1}
+.prod-still.wide img{height:260px}
+.prod-still:not(.wide) img{height:180px}
+.prod-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}
+.prod-row:first-child{border-top:1px solid var(--border)}
+.prod-lbl{font-family:var(--body);font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--mid)}
+.prod-val{font-family:var(--disp);font-size:19px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.prod-synopsis{font-family:var(--body);font-size:14px;font-weight:300;line-height:1.85;color:var(--mid);margin-top:22px}
+.prod-synopsis strong{color:var(--fg);font-style:italic;font-weight:400}
+.film-photos{padding:60px 60px 96px}
+.film-row1{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:3px}
+.film-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:3px}
+.film-row3{display:grid;grid-template-columns:1fr;gap:3px}
+.fs{position:relative;overflow:hidden;border:1px solid var(--border)}
+.fs img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+.fs:hover img{transform:scale(1.03)}
+.fs-lbl{position:absolute;bottom:0;left:0;right:0;padding:12px 16px;background:linear-gradient(to top,rgba(10,10,9,.88),transparent);display:flex;align-items:flex-end;justify-content:space-between;opacity:0;transition:opacity .3s}
+.fs:hover .fs-lbl{opacity:1}
+.fs-title{font-family:var(--disp);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.fs-year{font-family:var(--body);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mid)}
+.acting-layout{display:block}
+.r-name{font-family:var(--disp);font-size:68px;font-weight:900;text-transform:uppercase;line-height:.88;letter-spacing:-.01em;margin-bottom:12px}
+.r-sub{font-family:var(--body);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--mid);line-height:1.8;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.r-cat{font-family:var(--body);font-size:8px;font-weight:500;letter-spacing:.30em;text-transform:uppercase;color:var(--mid);margin:22px 0 10px}
+.r-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);align-items:baseline}
+.r-proj{font-family:var(--disp);font-size:19px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.r-role{font-family:var(--body);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mid)}
+.r-org{font-family:var(--body);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mid);text-align:right}
+.r-org.hl{color:var(--fg);font-weight:500}
+.skills-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.skill{font-family:var(--body);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);border:1px solid var(--border);border-radius:100px;padding:5px 13px;transition:border-color .2s,color .2s}
+.skill:hover{border-color:var(--fg);color:var(--fg)}
+.r-btns{display:flex;gap:10px;margin-top:22px}
+.r-btn{font-family:var(--body);font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--fg);border:1px solid var(--dim);border-radius:100px;padding:10px 20px;transition:background .2s,border-color .2s}
+.r-btn:hover{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.c-title{font-family:var(--disp);font-size:clamp(56px,8.5vw,118px);font-weight:900;text-transform:uppercase;line-height:.88;letter-spacing:-.01em;margin-bottom:52px}
+.c-title em{font-style:italic;color:var(--mid)}
+.c-row{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:padding-left .25s}
+.c-row:first-child{border-top:1px solid var(--border)}
+.c-row:hover{padding-left:10px}
+.c-lbl{font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:4px}
+.c-val{font-family:var(--disp);font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.c-arr{font-size:20px;color:var(--mid)}
+footer{padding:26px 60px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.f-logo{font-family:var(--disp);font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.f-copy{font-family:var(--body);font-size:9px;letter-spacing:.17em;text-transform:uppercase;color:var(--mid)}
+.mo{position:fixed;inset:0;background:rgba(10,10,9,.96);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(8px)}
+.mo.open{opacity:1;pointer-events:all}
+.mb{width:88vw;max-width:1040px;max-height:86vh;overflow-y:auto;background:#0f0f0e;border:1px solid rgba(240,237,230,.12);padding:50px;position:relative;transform:translateY(14px);transition:transform .3s;scrollbar-width:none}
+.mo.open .mb{transform:none}
+.mb::-webkit-scrollbar{display:none}
+.mc-btn{position:absolute;top:16px;right:16px;background:none;border:1px solid var(--border);border-radius:100px;width:34px;height:34px;cursor:pointer;font-size:13px;color:var(--mid);display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}
+.mc-btn:hover{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+@media(max-width:768px){
+.top-nav{padding:14px 16px;gap:5px}.pill{font-size:9px;padding:7px 12px;letter-spacing:.12em}
+.home-welcome{padding:4px 16px 0;font-size:9px}.home-name-wrap{padding:0 10px}
+.home-name{font-size:clamp(52px,14vw,100px)}.collage{height:420px}
+.ci,.vs{display:none}.ci:nth-child(3),.vs:first-of-type{display:block}
+#vs1{left:5%!important;top:10px!important;width:90%!important;height:220px!important}
+.home-scroll{padding:16px 0 28px}
+.bio-sec{grid-template-columns:1fr!important;gap:32px;padding:56px 24px}.bio-portrait{display:none}
+.sec{padding:60px 24px}.attn-sec{padding:60px 24px}.film-sec{padding:60px 24px 0}.film-photos{padding:40px 24px 60px}
+.disp-title{font-size:clamp(40px,10vw,72px)!important}.attn-video-large{height:260px}
+.attn-stats{grid-template-columns:repeat(3,1fr)!important}.strategy-grid{grid-template-columns:1fr!important}
+.film-row1,.film-row2{grid-template-columns:1fr!important}
+#april{padding:0 0 60px}#april>div{padding:0 24px!important}
+.prod-layout{grid-template-columns:1fr!important;gap:32px}.r-row{grid-template-columns:1fr 1fr!important}.r-org{display:none}
+#snav{padding:10px 16px;gap:4px;flex-wrap:wrap}.snav-brand{font-size:13px}
+footer{padding:20px 24px;flex-direction:column;gap:8px;text-align:center}
+}
+</style>
+<style>.rv{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}.rv.in{opacity:1;transform:none}.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}</style>
+</head>
+<body>
+<div id="home">
+  <nav class="top-nav">
+    <div class="pill active" onclick="window.scrollTo({top:0,behavior:'smooth'})">Home</div>
+    <div class="pill" onclick="goTo('april')">April In Frame</div>
+    <div class="pill" onclick="goTo('analytics')">Analytics</div>
+    <div class="pill" onclick="goTo('attn')">Attention Economy</div>
+    <div class="pill" onclick="goTo('film')">Film</div>
+    <div class="pill" onclick="goTo('acting')">Acting</div>
+    <div class="pill" onclick="goTo('bio')">About</div>
+    <div class="pill" onclick="goTo('contact')">Contact</div>
+  </nav>
+  <div style="position:relative;z-index:20;display:flex;justify-content:space-between;align-items:flex-start;padding:6px 28px 0">
+    <div class="home-welcome" style="padding:0">Welcome to the World of<br/>Signal &amp; Frame</div>
+    <div style="text-align:right;font-family:var(--body);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);line-height:1.7">The center of cultural intelligence<br/>New gen marketing and brand strategy<br/>Independent productions</div>
+  </div>
+  <div class="home-name-wrap"><span class="home-name">SIGNAL</span><span class="home-name">&amp; FRAME</span></div>
+  <div class="collage">
+    <div class="vs" id="vs1" style="left:35%;top:0;width:30%;height:340px;"><video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;"><source src="home_reel.mp4" type="video/mp4"></video></div>
+    <div class="vs" id="vs2" style="left:35%;top:345px;width:30%;height:190px;"><video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;"><source src="everything_reel.mp4" type="video/mp4"></video></div>
+    <div class="ci" style="left:0;top:10px;width:19%;height:420px;"><img src="speed.jpg" alt="Speed" style="object-position:top center" /><div class="ci-cap">Speed &middot; IShowSpeed</div></div>
+    <div class="ci" style="left:20%;top:20px;width:14%;height:300px;"><img src="prime-new.png" alt="Prime" style="object-position:top center" /><div class="ci-cap">Prime &middot; Logan Paul &amp; KSI</div></div>
+    <div class="ci" style="left:20%;top:330px;width:14%;height:300px;"><img src="gstaad-chain-new.png" alt="Gstaad Guy" style="object-position:top center" /><div class="ci-cap">Gstaad Guy &middot; @gstaadguy</div></div>
+    <div class="ci" style="left:66%;top:0;width:33%;height:240px;"><img src="jake-box.png" alt="Jake Paul vs Mike Tyson" style="object-position:center center" /><div class="ci-cap">Jake Paul vs Mike Tyson &middot; Netflix</div></div>
+    <div class="ci" style="left:66%;top:245px;width:13%;height:300px;"><img src="timothee.png" alt="Timoth&eacute;e Chalamet" style="object-position:top center" /><div class="ci-cap">Timoth&eacute;e Chalamet</div></div>
+    <div class="ci" style="right:0;bottom:0;width:21%;height:270px;"><img src="emma-coffee.png" alt="Emma Chamberlain Coffee" style="object-position:top center" /><div class="ci-cap">Emma Chamberlain &middot; Chamberlain Coffee</div></div>
+  </div>
+  <div class="home-scroll" onclick="goTo('bio')"><div class="hsl"></div><span>Scroll</span></div>
+</div>
+
+<nav id="snav">
+  <div class="snav-brand">Signal &amp; Frame</div>
+  <div class="pill" onclick="window.scrollTo({top:0,behavior:'smooth'})">Home</div>
+  <div class="pill" onclick="goTo('april')" data-s="april">April In Frame</div>
+  <div class="pill" onclick="goTo('analytics')" data-s="analytics">Analytics</div>
+  <div class="pill" onclick="goTo('attn')" data-s="attn">Attention Economy</div>
+  <div class="pill" onclick="goTo('film')" data-s="film">Film</div>
+  <div class="pill" onclick="goTo('acting')" data-s="acting">Acting</div>
+  <div class="pill" onclick="goTo('bio')" data-s="bio">About</div>
+  <div class="pill" onclick="goTo('contact')" data-s="contact">Contact</div>
+</nav>
+
+<div id="bio" class="bio-sec rv">
+  <div class="bio-title">signal<br/>meets<br/>frame</div>
+  <div><p class="bio-lead">Deeply embedded in the worlds of film, media, and creator culture.</p><p class="bio-main">In the world of modern media, Signal &amp; Frame centers brand strategy around the principles of the attention based economy. Framing cultural capital into a signal through content analytics. Strategizing brand relevance for the chronically online.</p></div>
+  <div class="bio-portrait" style="padding:0;overflow:hidden;display:flex;flex-direction:column;background:#0a0a09;gap:0;">
+    <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:12px 8px;border-bottom:1px solid var(--border);"><img src="signal-logo-new.png" style="width:100%;height:auto;object-fit:contain;max-height:60px;" /></div>
+    <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:12px 8px;border-bottom:1px solid var(--border);"><img src="signal-logo-new.png" style="width:100%;height:auto;object-fit:contain;max-height:60px;" /></div>
+    <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:12px 8px;border-bottom:1px solid var(--border);"><img src="signal-logo-new.png" style="width:100%;height:auto;object-fit:contain;max-height:60px;" /></div>
+    <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:12px 8px;border-bottom:1px solid var(--border);"><img src="signal-logo-new.png" style="width:100%;height:auto;object-fit:contain;max-height:60px;" /></div>
+    <div style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:12px 8px;"><img src="signal-logo-new.png" style="width:100%;height:auto;object-fit:contain;max-height:60px;" /></div>
+  </div>
+</div>
+
+<section id="analytics" class="sec">
+  <div class="eyebrow rv">01 &mdash; Creator Analytics</div>
+  <div class="disp-title rv" style="font-size:clamp(56px,7.5vw,108px);margin-bottom:56px">Brand<br/><em>Intelligence</em></div>
+  <div class="rv" style="margin-bottom:3px;">
+    <div style="position:relative;overflow:hidden;width:100%;height:440px;border:1px solid var(--border);">
+      <img src="gstaad%20guy%20couch.png" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;transition:transform .5s" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''" />
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,9,.92) 0%,transparent 55%);display:flex;flex-direction:column;justify-content:flex-end;padding:36px 40px;">
+        <div style="font-family:var(--body);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--mid);margin-bottom:10px;">Creator Spotlight &middot; Gstaad Guy</div>
+        <div style="font-family:var(--disp);font-size:clamp(28px,3vw,48px);font-weight:900;text-transform:uppercase;letter-spacing:-.01em;line-height:.92;margin-bottom:6px;">Loro Piana Head to Toe</div>
+        <div style="font-family:var(--body);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(240,237,230,.45);margin-bottom:12px;">@gstaadguy</div>
+        <p style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.75;color:var(--mid);max-width:640px;">Parodying the 1% of the 1%, through playing an ultra wealthy socialite from a Swiss ski town. His comedic skits brought a new audience to an older luxury brand &mdash; proving that cultural irony is one of the most powerful entry points into aspirational markets.</p>
+      </div>
+    </div>
+  </div>
+  <div class="strategy-grid rv">
+    <div class="s-card" onclick="openModal('marlon')">
+      <div class="s-card-arrow">&nearr;</div>
+      <div class="s-card-photo" style="height:240px;"><img src="marlon-soccer.png" alt="Marlon" style="object-position:top center" /></div>
+      <div class="s-card-body">
+        <div class="s-card-num">01</div>
+        <div class="s-card-title">Marlon<br/>Brand Analysis</div>
+        <div class="s-card-tags">Fashion &middot; Culture &middot; Attention Economy</div>
+        <p class="s-card-desc">From streaming homeless in New York to <strong>Twitch Rank #101 globally</strong> in 27 months. First streamer to walk for <strong>H&amp;M at Paris and London Fashion Week 2025</strong>.</p>
+        <div class="s-card-metrics">
+          <div><span class="mv">2.03M</span><span class="ml">Twitch Followers</span></div>
+          <div><span class="mv">9.12</span><span class="ml">R Score</span></div>
+          <div><span class="mv">$263K</span><span class="ml">Est. Brand / mo</span></div>
+        </div>
+        <div class="rscore-wrap">
+          <div class="rscore-lbl">Brand Path &mdash; R Scoring</div>
+          <div class="rscore-row"><div class="rscore-name top">Fashion / Cultural Route &check;</div><div class="rscore-bar-wrap"><div class="rscore-bar top" style="width:91%"></div></div><div class="rscore-val">9.12</div></div>
+          <div class="rscore-row"><div class="rscore-name">Hybrid (Current)</div><div class="rscore-bar-wrap"><div class="rscore-bar" style="width:82%"></div></div><div class="rscore-val">8.25</div></div>
+          <div class="rscore-row"><div class="rscore-name">Streaming-First</div><div class="rscore-bar-wrap"><div class="rscore-bar" style="width:65%"></div></div><div class="rscore-val">6.50</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="s-card" onclick="openModal('steezy')">
+      <div class="s-card-arrow">&nearr;</div>
+      <div class="s-card-photo" style="height:240px;"><img src="steezy-boat.png" alt="Steezy Kane" style="object-position:top center" /></div>
+      <div class="s-card-body">
+        <div class="s-card-num">02</div>
+        <div class="s-card-title">Steezy Kane<br/>Pivot Strategy</div>
+        <div class="s-card-tags">YouTube &middot; Film &middot; TV Development</div>
+        <p class="s-card-desc"><strong>3.75M subscribers. 386M views. 8 years.</strong> Deliberately transitioning to write and direct. Worked with HBO Max, Hulu, Audible, Converse. Wrote for <strong>The Weeknd's Vanity Fair cover</strong>.</p>
+        <div class="s-card-metrics">
+          <div><span class="mv">3.75M</span><span class="ml">YouTube Subs</span></div>
+          <div><span class="mv">9.12</span><span class="ml">R Score</span></div>
+          <div><span class="mv">386M</span><span class="ml">Total Views</span></div>
+        </div>
+        <div class="rscore-wrap">
+          <div class="rscore-lbl">Career Pivot &mdash; R Scoring</div>
+          <div class="rscore-row"><div class="rscore-name top">Brand &rarr; Film &rarr; TV &check;</div><div class="rscore-bar-wrap"><div class="rscore-bar top" style="width:91%"></div></div><div class="rscore-val">9.12</div></div>
+          <div class="rscore-row"><div class="rscore-name">Branded Content + Directing</div><div class="rscore-bar-wrap"><div class="rscore-bar" style="width:84%"></div></div><div class="rscore-val">8.38</div></div>
+          <div class="rscore-row"><div class="rscore-name">Brand-Funded Short Films</div><div class="rscore-bar-wrap"><div class="rscore-bar" style="width:79%"></div></div><div class="rscore-val">7.88</div></div>
+          <div class="rscore-row"><div class="rscore-name">Return to Viral</div><div class="rscore-bar-wrap"><div class="rscore-bar" style="width:64%"></div></div><div class="rscore-val">6.38</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="april" style="border-top:1px solid var(--border);padding:0 0 96px;">
+  <div style="position:relative;width:100%;height:420px;overflow:hidden;background:#0d0d0b;">
+    <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:1;"><source src="april_reel.mp4" type="video/mp4"></video>
+    <div style="position:absolute;inset:0;background:rgba(10,10,9,.55);z-index:2;pointer-events:none;"></div>
+    <div style="position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+      <div style="font-family:var(--disp);font-size:clamp(64px,10vw,150px);font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:.85;color:transparent;-webkit-text-stroke:1px rgba(240,237,230,.35);text-align:center;user-select:none;">April<br/>In Frame</div>
+      <div style="font-family:var(--body);font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:rgba(240,237,230,.35);margin-top:20px;">May 2026 &middot; Signal &amp; Frame</div>
+    </div>
+  </div>
+  <div style="padding:0 60px;">
+    <div style="padding:72px 0 60px;border-bottom:1px solid var(--border);">
+      <div class="eyebrow rv" style="margin-bottom:24px">Sidemen Charity Match 2026</div>
+      <div class="disp-title rv" style="font-size:clamp(40px,5vw,72px);margin-bottom:40px">Wembley<br/><em>Sells Out Again</em></div>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:3px;margin-bottom:36px;" class="rv d1">
+        <div style="position:relative;overflow:hidden;height:360px;border:1px solid var(--border);"><img src="sidemen-1.png" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform=''" /></div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <div style="position:relative;overflow:hidden;flex:1;border:1px solid var(--border);"><img src="sidemen-2.png" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform=''" /></div>
+          <div style="position:relative;overflow:hidden;flex:1;border:1px solid var(--border);"><img src="sidemen-3.png" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform=''" /></div>
+        </div>
+        <div style="position:relative;overflow:hidden;height:360px;border:1px solid var(--border);"><img src="sidemen-4.png" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform=''" /></div>
+      </div>
+      <div style="max-width:720px;" class="rv d2">
+        <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:14px;">Description</div>
+        <div style="font-family:var(--body);font-size:15px;font-weight:300;line-height:1.85;color:var(--mid);border-left:1px solid var(--border);padding-left:20px;">The Sidemen are back for another year at Wembley, gathering 34 of the world's most influential faces, to face off on the pitch. This time shattering their record, raising over 8.4 million dollars. All of this while livestreaming the match to over 2 million live viewers. The Sidemen FC vs YouTube All Stars went to penalties, with the YouTubers taking it 4&ndash;1.</div>
+      </div>
+    </div>
+    <div style="padding:72px 0 60px;border-bottom:1px solid var(--border);">
+      <div class="eyebrow rv" style="margin-bottom:24px">Speed X Expedia &middot; Caribbean Tour</div>
+      <div class="disp-title rv" style="font-size:clamp(40px,5vw,72px);margin-bottom:40px">IShowSpeed<br/><em>Goes Caribbean</em></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:36px;" class="rv d1">
+        <div style="overflow:hidden;height:380px;border:1px solid var(--border);"><img src="speed-tour.png" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''" /></div>
+        <div style="overflow:hidden;height:380px;border:1px solid var(--border);"><img src="speed-expedia.png" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''" /></div>
+      </div>
+      <div style="max-width:720px;" class="rv d2">
+        <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:14px;">Description</div>
+        <div style="font-family:var(--body);font-size:15px;font-weight:300;line-height:1.85;color:var(--mid);border-left:1px solid var(--border);padding-left:20px;">The former mayor of Peru launches his anticipated tour of the Caribbean. Visiting over 13 countries, partnering with Expedia to transport him across the islands. Travel and tourism are changing through social influence: <a href="https://speed.expedia.com/" target="_blank" style="color:var(--fg);text-decoration:underline;text-underline-offset:3px">speed.expedia.com</a> allows viewers to follow his past travels all over the world through an online global database of all his activities, clips, and stops. Speed was able to make history, streaming across 4 countries in under a day and also stream in the ocean, scuba diving.</div>
+      </div>
+    </div>
+    <div style="padding:72px 0 60px;border-bottom:1px solid var(--border);">
+      <div class="eyebrow rv" style="margin-bottom:24px">A Month for TV &middot; Film &amp; Entertainment</div>
+      <div class="disp-title rv" style="font-size:clamp(40px,5vw,72px);margin-bottom:40px">Streaming<br/><em>Makes Waves</em></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:36px;" class="rv d1">
+        <div style="border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;">
+          <div style="overflow:hidden;height:300px;"><img src="the-boys-new.png" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s;object-position:top" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''" /></div>
+          <div style="padding:24px 28px 28px;">
+            <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:8px;">Amazon Prime &middot; Final Season</div>
+            <div style="font-family:var(--disp);font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:16px;">The Boys<br/>Season 5</div>
+            <div style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.8;color:var(--mid);border-left:1px solid var(--border);padding-left:16px;">TV makes waves, premiering the final season of The Boys, and adding a second season to A24's Beef. After a long TV drought this year.</div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;">
+          <div style="overflow:hidden;height:300px;"><img src="beef.webp" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s;object-position:top" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''" /></div>
+          <div style="padding:24px 28px 28px;">
+            <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:8px;">Netflix &middot; A24 &middot; Season 2</div>
+            <div style="font-family:var(--disp);font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:16px;">Beef<br/>Season 2</div>
+            <div style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.8;color:var(--mid);border-left:1px solid var(--border);padding-left:16px;">TV makes waves, premiering the final season of The Boys, and adding a second season to A24's Beef. After a long TV drought this year.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:72px 0 0;">
+      <div class="eyebrow rv" style="margin-bottom:24px">Coachella 2026</div>
+      <div class="disp-title rv" style="font-size:clamp(40px,5vw,72px);margin-bottom:40px">Biebchella</div>
+      <div style="overflow:hidden;height:480px;border:1px solid var(--border);margin-bottom:36px;" class="rv d1"><img src="bieber.webp" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s;object-position:top" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform=''" /></div>
+      <div style="max-width:720px;" class="rv d2">
+        <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:14px;">Description</div>
+        <div style="font-family:var(--body);font-size:15px;font-weight:300;line-height:1.85;color:var(--mid);border-left:1px solid var(--border);padding-left:20px;">JB headlines Coachella, on stage with a laptop and mic, scrolling through clips, memories, and eras of his music. Giving the performance an immersive quality, with a huge screen behind him.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="attn" class="attn-sec">
+  <div class="eyebrow rv">02 &mdash; Framework</div>
+  <div class="disp-title rv" style="font-size:clamp(56px,7.5vw,108px);margin-bottom:52px">The Attention<br/><em>Economy</em></div>
+  <div class="attn-video-large rv" id="attn-vw">
+    <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;"><source src="celsius_reel.mp4" type="video/mp4"></video>
+  </div>
+  <div class="rv" style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.8;color:var(--mid);margin-bottom:28px;max-width:720px;border-left:1px solid var(--border);padding-left:20px;">A soccer match influencer activation: Celsius limited time (Electric Vibe flavor).</div>
+  <blockquote class="attn-quote rv">Brands should be pursuing cultural currency.<span style="font-family:var(--body);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--mid);font-style:normal;display:block;margin-top:8px">&mdash; Signal &amp; Frame &middot; 2026</span></blockquote>
+  <div class="attn-stats rv d1">
+    <div class="attn-stat"><div class="attn-stat-val">82%</div><div class="attn-stat-lbl">Internet Traffic &mdash; Video</div></div>
+    <div class="attn-stat"><div class="attn-stat-val">141%</div><div class="attn-stat-lbl">Shorts Growth YoY</div></div>
+    <div class="attn-stat"><div class="attn-stat-val">58.4M</div><div class="attn-stat-lbl">Daily TikTok (US avg)</div></div>
+    <div class="attn-stat"><div class="attn-stat-val">3s</div><div class="attn-stat-lbl">Attention Window</div></div>
+    <div class="attn-stat"><div class="attn-stat-val">300%</div><div class="attn-stat-lbl">Native Clip Reach Boost</div></div>
+  </div>
+  <div class="attn-grid rv d2">
+    <div class="attn-cell"><div class="attn-cell-num">01</div><div class="attn-cell-title">Platform diversification is mandatory.</div><div class="attn-cell-body">Marlon's 2025 Twitch ban proved it directly.</div></div>
+    <div class="attn-cell"><div class="attn-cell-num">02</div><div class="attn-cell-title">AI raises the floor, not the ceiling.</div><div class="attn-cell-body">Authenticity and distinctive personality are the differentiators.</div></div>
+    <div class="attn-cell"><div class="attn-cell-num">03</div><div class="attn-cell-title">The creator-to-brand pipeline is maturing.</div><div class="attn-cell-body">The audience is the launch infrastructure for whatever comes next.</div></div>
+    <div class="attn-cell"><div class="attn-cell-num">04</div><div class="attn-cell-title">Traditional media is integrating.</div><div class="attn-cell-body">Jake Paul fought Tyson on Netflix. Logan Paul is in WWE.</div></div>
+  </div>
+</div>
+
+<section id="film" class="film-sec">
+  <div class="iss-eyebrow rv">03 &mdash; Signal &amp; Frame Production &middot; 2025</div>
+  <div class="disp-title rv" style="font-size:clamp(44px,5.5vw,80px);margin-bottom:52px;font-style:italic">In Search of Silence</div>
+  <div class="prod-layout rv">
+    <div class="prod-stills">
+      <div class="prod-still wide"><img src="iss-nature.png" alt="ISS Nature" /></div>
+      <div class="prod-still"><img src="iss-screen.png" alt="ISS Screen" /></div>
+      <div class="prod-still"><img src="iss-book.png" alt="ISS Book" /></div>
+      <div class="prod-still wide"><img src="iss-room.png" alt="ISS Room" /></div>
+    </div>
+    <div class="rv d1">
+      <div class="prod-row"><span class="prod-lbl">Title</span><span class="prod-val" style="font-style:italic">In Search of Silence</span></div>
+      <div class="prod-row"><span class="prod-lbl">Format</span><span class="prod-val">Short Film</span></div>
+      <div class="prod-row"><span class="prod-lbl">Year</span><span class="prod-val">2025</span></div>
+      <div class="prod-row"><span class="prod-lbl">Budget</span><span class="prod-val">$150</span></div>
+      <div class="prod-row"><span class="prod-lbl">Role</span><span class="prod-val">Writer &middot; Lead</span></div>
+      <p class="prod-synopsis">After retreating into isolation, reality slowly begins to dissolve &mdash; more and more. <strong>In Search of Silence.</strong> Shot on a $150 budget.</p>
+    </div>
+  </div>
+</section>
+
+<div class="film-photos">
+  <div class="film-row1 rv">
+    <div class="fs" style="height:400px"><img src="frances-ha.png" alt="Frances Ha" /><div class="fs-lbl"><span class="fs-title">Frances Ha</span><span class="fs-year">2012</span></div></div>
+    <div class="fs" style="height:400px"><img src="before-sunrise.png" alt="Before Sunrise" /><div class="fs-lbl"><span class="fs-title">Before Sunrise</span><span class="fs-year">1995</span></div></div>
+  </div>
+  <div class="film-row2 rv d1">
+    <div class="fs" style="height:310px"><img src="summers-tale.png" alt="A Summer's Tale" /><div class="fs-lbl"><span class="fs-title">A Summer's Tale</span><span class="fs-year">1996</span></div></div>
+    <div class="fs" style="height:310px"><img src="pride-prejudice.png" alt="Pride &amp; Prejudice" /><div class="fs-lbl"><span class="fs-title">Pride &amp; Prejudice</span><span class="fs-year">2005</span></div></div>
+    <div class="fs" style="height:310px"><img src="fight-club-bts.png" alt="Fight Club BTS" /><div class="fs-lbl"><span class="fs-title">Fight Club</span><span class="fs-year">BTS &middot; 1999</span></div></div>
+  </div>
+  <div class="film-row3 rv d2">
+    <div class="fs" style="height:320px"><img src="la-la-land.png" alt="La La Land" /><div class="fs-lbl"><span class="fs-title">La La Land</span><span class="fs-year">2016</span></div></div>
+  </div>
+</div>
+
+<section id="acting" class="sec">
+  <div class="eyebrow rv">04 &mdash; Acting Resume</div>
+  <div class="acting-layout">
+    <div class="rv">
+      <div class="r-name" style="font-family:var(--disp);font-size:68px;font-weight:900;text-transform:uppercase;">About</div>
+      <div style="font-family:var(--body);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mid);padding:10px 0 16px;border-bottom:1px solid var(--border);margin-bottom:4px;">Jay Miglani</div>
+      <div class="r-sub">Non-Union &middot; Height 6'0 &middot; Hair Black &middot; Eyes Brown<br/>Actor's Choice Talent Agency &middot; Louisiana &middot; (225) 408-9857</div>
+      <p style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.85;color:var(--mid);padding:16px 0;border-bottom:1px solid var(--border);">Signal &amp; Frame highlights creator insight for brand development and supports independent stories. Specializing in brand activation and growth marketing.</p>
+      <p style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.85;color:var(--mid);padding:20px 0;border-bottom:1px solid var(--border);margin-bottom:4px">Jay Miglani is an actor, writer, and filmmaker based in New York. On screen, he holds a recurring credit on <strong style="color:var(--fg);font-weight:400">Netflix's Outer Banks Season 5</strong> and a lead role in the short film <em>In Search of Silence</em>. Stage work includes Puck in <em>A Midsummer Night's Dream</em> and Doug in <em>Gruesome Playground Injuries</em>. Trained in <strong style="color:var(--fg);font-weight:400">Meisner, Stanislavski, and Uta Hagen</strong>. Represented by Actor's Choice Talent Agency in Louisiana.</p>
+      <div class="r-cat">Television</div>
+      <div class="r-row"><div class="r-proj">Outer Banks <span style="font-size:14px;font-weight:400;font-style:italic">(S5)</span></div><div class="r-role">Featured Background</div><div class="r-org hl">Netflix</div></div>
+      <div class="r-cat">Film</div>
+      <div class="r-row"><div class="r-proj">In Search of Silence</div><div class="r-role">Lead</div><div class="r-org">Short Film</div></div>
+      <div class="r-cat">Theatre</div>
+      <div class="r-row"><div class="r-proj">A Midsummer Night's Dream</div><div class="r-role">Puck</div><div class="r-org">JMU</div></div>
+      <div class="r-row"><div class="r-proj">Gruesome Playground Injuries</div><div class="r-role">Doug</div><div class="r-org">JMU</div></div>
+      <div class="r-cat" style="margin-top:18px">Skills</div>
+      <div class="skills-wrap">
+        <div class="skill">Fluent Hindi</div><div class="skill">Conversational French</div><div class="skill">On-Camera Acting</div><div class="skill">Improvisation</div><div class="skill">Cold Reading</div><div class="skill">Meisner</div><div class="skill">Stanislavski</div><div class="skill">Uta Hagen</div><div class="skill">Film Editing</div><div class="skill">Screenwriting</div>
+      </div>
+      <div class="r-btns">
+        <a href="https://resumes.actorsaccess.com/2705432-7344709" target="_blank" class="r-btn">Actors Access &nearr;</a>
+        <a href="https://app.castingnetworks.com/talent/public-profile/409d12b0-fcc0-11f0-b885-eb16738bc8b3" target="_blank" class="r-btn">Casting Networks &nearr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="sec">
+  <div class="eyebrow rv">05 &mdash; Contact</div>
+  <div class="c-title rv">Let's<br/><em>Work</em><br/>Together.</div>
+  <div class="rv d1" style="max-width:560px">
+    <a class="c-row" href="mailto:jaymiglanii@gmail.com"><div><div class="c-lbl">Email</div><div class="c-val">jaymiglanii@gmail.com</div></div><div class="c-arr">&nearr;</div></a>
+    <a class="c-row" href="https://resumes.actorsaccess.com/2705432-7344709" target="_blank"><div><div class="c-lbl">Actors Access</div><div class="c-val">Jay Miglani</div></div><div class="c-arr">&nearr;</div></a>
+    <a class="c-row" href="https://app.castingnetworks.com/talent/public-profile/409d12b0-fcc0-11f0-b885-eb16738bc8b3" target="_blank"><div><div class="c-lbl">Casting Networks</div><div class="c-val">Jay Miglani</div></div><div class="c-arr">&nearr;</div></a>
+  </div>
+</section>
+
+<footer>
+  <div class="f-logo">Signal &amp; Frame</div>
+  <div class="f-copy">&copy; 2026 Signal &amp; Frame &middot; Jay Miglani &middot; All Rights Reserved</div>
+</footer>
+
+<div class="mo" id="mo" onclick="if(event.target===this)closeModal()">
+  <div class="mb">
+    <button class="mc-btn" onclick="closeModal()">&times;</button>
+    <div id="mbd"></div>
+  </div>
+</div>
+
+<script>
+
+const homeEl=document.getElementById('home');
+const sNav=document.getElementById('snav');
+window.addEventListener('scroll',()=>{
+  sNav.classList.toggle('show',homeEl.getBoundingClientRect().bottom<=0);
+  document.querySelectorAll('#snav [data-s]').forEach(p=>{
+    const el=document.getElementById(p.dataset.s);
+    if(el)p.classList.toggle('active',el.getBoundingClientRect().top<=110);
+  });
+});
+function goTo(id){
+  const el=document.getElementById(id);if(!el)return;
+  window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-70,behavior:'smooth'});
+}
+document.querySelectorAll('.rv').forEach(el=>{
+  new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.07,rootMargin:'0px 0px -20px 0px'}).observe(el);
+});
+const modals={
+  marlon:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start">
+    <div>
+      <div style="font-family:var(--body);font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--mid);margin-bottom:12px">01 &mdash; Creator Analytics</div>
+      <div style="font-family:var(--disp);font-size:48px;font-weight:900;text-transform:uppercase;line-height:.9;margin-bottom:10px">Marlon<br/><span style="font-style:italic;color:var(--mid)">Brand Analysis</span></div>
+      <div style="font-family:var(--body);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mid);margin-bottom:22px">@Mar3LG &middot; Swedish-American &middot; Age 24 &middot; LA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:22px">
+        <img src="marlon-portrait.png" style="width:100%;height:260px;object-fit:cover;object-position:top;border:1px solid var(--border)" />
+        <img src="marlon-runway.png" style="width:100%;height:260px;object-fit:cover;border:1px solid var(--border)" />
+      </div>
+      <img src="marlon-soccer.png" style="width:100%;height:160px;object-fit:cover;border:1px solid var(--border);margin-bottom:20px" />
+      <p style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.8;color:var(--mid)">From streaming homeless in New York to <strong style="color:var(--fg);font-weight:400">Twitch Rank #101 globally with 2,035,227 followers</strong> in 27 months. First streamer to walk for <strong style="color:var(--fg);font-weight:400">H&M at Paris &amp; London Fashion Week 2025</strong>.</p>
+    </div>
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:20px">
+        ${[["2.03M","Twitch"],["3.5M","TikTok"],["2.8M","Instagram"],["8.87M","Cross-Platform"]].map(([v,l])=>`<div style="background:var(--bg);padding:18px"><div style="font-family:var(--disp);font-size:30px;font-weight:700;line-height:1">${v}</div><div style="font-family:var(--body);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--mid);margin-top:5px">${l}</div></div>`).join("")}
+      </div>
+      <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:10px">Brand Path &mdash; R Scoring</div>
+      ${[["Fashion / Cultural Route","9.12",91,true],["Hybrid (Current)","8.25",82,false],["Streaming-First","6.50",65,false]].map(([l,v,w,a])=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="flex:1.2;font-family:var(--body);font-size:13px;font-weight:300;color:${a?"var(--fg)":"var(--mid)"}">${l}${a?" ✓":""}</div><div style="flex:1.5;height:2px;background:var(--dim)"><div style="height:100%;background:${a?"var(--fg)":"var(--dim)"};width:${w}%"></div></div><div style="font-family:var(--disp);font-size:19px;font-weight:700;min-width:34px;text-align:right">${v}</div></div>`).join("")}
+      <div style="margin-top:18px;padding:18px;border:1px solid var(--border);background:#0a0a09">
+        <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Primary Path &middot; R Score 9.12</div>
+        <div style="font-family:var(--disp);font-size:20px;font-weight:800;text-transform:uppercase;margin-bottom:8px">Fashion / Cultural Crossover</div>
+        <p style="font-family:var(--body);font-size:13px;font-weight:300;line-height:1.75;color:var(--mid)">The H&M runway was the signal. Reduce streaming frequency, build scarcity, convert platform fame to cultural equity. Est. monthly brand value: <strong style="color:var(--fg);font-weight:400">$262,791</strong>.</p>
+      </div>
+    </div>
+  </div>`,
+  steezy:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start">
+    <div>
+      <div style="font-family:var(--body);font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--mid);margin-bottom:12px">02 &mdash; Creator Analytics</div>
+      <div style="font-family:var(--disp);font-size:48px;font-weight:900;text-transform:uppercase;line-height:.9;margin-bottom:10px">Steezy Kane<br/><span style="font-style:italic;color:var(--mid)">Pivot Strategy</span></div>
+      <div style="font-family:var(--body);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mid);margin-bottom:22px">Isaiah Shepard &middot; Filmmaker &middot; Writer &middot; Director</div>
+      <img src="steezy-portrait.png" style="width:100%;height:300px;object-fit:cover;object-position:top;border:1px solid var(--border);margin-bottom:20px" />
+      <p style="font-family:var(--body);font-size:14px;font-weight:300;line-height:1.8;color:var(--mid)"><strong style="color:var(--fg);font-weight:400">3.75M subscribers. 386M views. 8 years.</strong> Deliberately transitioning to write and direct. Worked with HBO Max, Hulu, Audible, Converse. Wrote for <strong style="color:var(--fg);font-weight:400">The Weeknd's Vanity Fair cover</strong>.</p>
+      <div style="margin-top:18px;padding:18px;border:1px solid var(--border)"><p style="font-family:var(--body);font-size:15px;font-style:italic;font-weight:300;line-height:1.5;color:var(--fg)">"Not an algorithm problem. An output problem. 6% engagement proves the audience is still there."</p></div>
+    </div>
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:20px">
+        ${[["3.75M","YouTube Subs"],["386M","Total Views"],["6.0%","Engagement"],["−75%","Revenue Decline"]].map(([v,l])=>`<div style="background:var(--bg);padding:18px"><div style="font-family:var(--disp);font-size:30px;font-weight:700;line-height:1">${v}</div><div style="font-family:var(--body);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--mid);margin-top:5px">${l}</div></div>`).join("")}
+      </div>
+      <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:10px">Career Pivot &mdash; R Scoring</div>
+      ${[["Brand → Film → TV","9.12",91,true],["Branded Content + Directing","8.38",84,false],["Brand-Funded Short Films","7.88",79,false],["Return to Viral","6.38",64,false]].map(([l,v,w,a])=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="flex:1.4;font-family:var(--body);font-size:12px;font-weight:300;color:${a?"var(--fg)":"var(--mid)"}">${l}${a?" ✓":""}</div><div style="flex:1.2;height:2px;background:var(--dim)"><div style="height:100%;background:${a?"var(--fg)":"var(--dim)"};width:${w}%"></div></div><div style="font-family:var(--disp);font-size:19px;font-weight:700;min-width:34px;text-align:right">${v}</div></div>`).join("")}
+      <div style="margin-top:18px;padding:18px;border:1px solid var(--border);background:#0a0a09">
+        <div style="font-family:var(--body);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Primary Path &middot; R Score 9.12</div>
+        <div style="font-family:var(--disp);font-size:20px;font-weight:800;text-transform:uppercase;margin-bottom:8px">Brand → Short Film → TV</div>
+        <p style="font-family:var(--body);font-size:13px;font-weight:300;line-height:1.75;color:var(--mid)">Use existing brand relationships to fund the next creative chapter. Phase 1: pitch a 6&ndash;10 min brand film with Converse, Audible, or Hulu. Budget: <strong style="color:var(--fg);font-weight:400">$50K&ndash;$150K</strong>. Phase 3: TV pitch to FX, Netflix, A24 TV.</p>
+      </div>
+    </div>
+  </div>`
+};
+function openModal(key){document.getElementById('mbd').innerHTML=modals[key]||'';document.getElementById('mo').classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(){document.getElementById('mo').classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>
